@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom"; // ✅ added
 import { motion } from "framer-motion";
 import {
   LayoutDashboard,
@@ -11,9 +12,10 @@ import {
 
 export default function Layout({ children }) {
   const [collapsed, setCollapsed] = useState(true);
+  const navigate = useNavigate(); // ✅ added
 
   return (
-    <div className="h-screen bg-[#f4fbf7] flex flex-col">
+    <div className="min-h-screen bg-[#f4fbf7] flex flex-col">
 
       {/* NAVBAR */}
       <div className="flex items-center justify-between px-4 h-12 bg-green-600 text-white shadow-sm">
@@ -58,12 +60,13 @@ export default function Layout({ children }) {
           {/* MENU */}
           <div className={`flex flex-col mt-6 ${collapsed ? "gap-8 items-center" : "gap-6 px-3"}`}>
             {[
-              { icon: LayoutDashboard, name: "Dashboard" },
-              { icon: Bot, name: "AI Assistance" },
-              { icon: Settings, name: "Settings" },
+              { icon: LayoutDashboard, name: "Dashboard", path: "/dashboard" },
+              { icon: Bot, name: "AI Assistance", path: "/chatbot" },
+              { icon: Settings, name: "Settings", path: "/setting" },
             ].map((item, i) => (
               <motion.div
                 key={i}
+                onClick={() => navigate(item.path)} // ✅ added
                 whileHover={{ x: collapsed ? 0 : 5 }}
                 className={`relative flex ${
                   collapsed
@@ -94,11 +97,10 @@ export default function Layout({ children }) {
             ))}
           </div>
 
-          {/* PROFILE SECTION (FIXED CLEAN ALIGNMENT) */}
+          {/* PROFILE SECTION */}
           <div className="mt-auto px-3 pb-4">
 
             {collapsed ? (
-              // COLLAPSED VIEW
               <div className="flex justify-center">
                 <img
                   src="https://i.pravatar.cc/40"
@@ -106,10 +108,8 @@ export default function Layout({ children }) {
                 />
               </div>
             ) : (
-              // EXPANDED VIEW
               <div className="flex flex-col gap-3">
 
-                {/* Avatar + Name */}
                 <div className="flex items-center gap-3">
                   <img
                     src="https://i.pravatar.cc/40"
@@ -118,7 +118,6 @@ export default function Layout({ children }) {
                   <p className="text-sm font-medium">Farmer</p>
                 </div>
 
-                {/* Logout */}
                 <button className="w-full bg-white/10 hover:bg-white/20 py-2 rounded-lg text-sm transition">
                   Logout
                 </button>
@@ -130,7 +129,7 @@ export default function Layout({ children }) {
         </div>
 
         {/* MAIN CONTENT */}
-        <div className="flex-1 overflow-y-auto p-6">
+        <div className="flex-1 overflow-y-auto py-6">
           {children}
         </div>
       </div>

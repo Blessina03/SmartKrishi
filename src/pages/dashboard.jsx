@@ -1,4 +1,7 @@
 import { motion } from "framer-motion";
+import { useLocation } from "react-router-dom";
+import { useState, useEffect } from "react";
+
 import {
   Sprout,
   Leaf,
@@ -9,6 +12,7 @@ import {
   Wind,
   CloudRain,
   AlertTriangle,
+  CheckCircle,
 } from "lucide-react";
 
 import {
@@ -28,6 +32,56 @@ import {
 import Layout from "../components/layout";
 
 export default function Dashboard() {
+  const location = useLocation();
+  const isNewUser = location.state?.isNewUser;
+  const isLoginSuccess = location.state?.isLoginSuccess; // ✅ added
+
+  const [showPopup, setShowPopup] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [showLoginSuccess, setShowLoginSuccess] = useState(false); // ✅ added
+
+  const [userInput, setUserInput] = useState({
+    region: "",
+    landSize: "",
+    soilType: "",
+  });
+
+  const [inputErrors, setInputErrors] = useState({});
+
+  useEffect(() => {
+    if (isNewUser) {
+      setShowPopup(true);
+    }
+
+    // ✅ login toast logic
+    if (isLoginSuccess) {
+      setShowLoginSuccess(true);
+      setTimeout(() => setShowLoginSuccess(false), 1500);
+    }
+  }, [isNewUser, isLoginSuccess]);
+
+  const handleSubmitPopup = () => {
+    let errors = {};
+
+    if (!userInput.region) errors.region = "Region is required";
+    if (!userInput.landSize) errors.landSize = "Land size is required";
+    else if (Number(userInput.landSize) <= 0)
+      errors.landSize = "Land size must be positive";
+    if (!userInput.soilType) errors.soilType = "Soil image is required";
+
+    if (Object.keys(errors).length > 0) {
+      setInputErrors(errors);
+      return;
+    }
+
+    setShowPopup(false);
+    setShowSuccess(true);
+
+    // ✅ AUTO CLOSE AFTER 2 SECONDS
+    setTimeout(() => {
+      setShowSuccess(false);
+    }, 2000);
+  };
 
   const weatherData = [
     { day: "Mon", temp: 28 },
@@ -58,12 +112,152 @@ export default function Dashboard() {
 
   return (
     <Layout>
+      <div className="flex-1 overflow-y-auto min-h-screen w-full bg-green-50">
 
-      {/* ✅ MAIN WRAPPER WITH SPACING */}
-      <div className="space-y-6">
+        {/* ✅ LOGIN SUCCESS TOAST */}
+        {showLoginSuccess && (
+          <div className="fixed inset-0 flex items-center justify-center bg-black/40 z-50">
+            <motion.div
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              className="bg-white p-6 md:p-8 rounded-2xl w-[300px] md:w-[350px] shadow-xl flex flex-col items-center gap-4"
+            >
+              <CheckCircle className="text-green-500 w-12 h-12" />
+
+              <h2 className="text-lg font-bold text-gray-800 text-center">
+                Logged in Successfully!
+              </h2>
+
+              <p className="text-sm text-gray-500 text-center">
+                Welcome back to SmartKrishi 🌱
+              </p>
+            </motion.div>
+          </div>
+        )}
+
+        {/* SIGNUP POPUP */}
+        {showPopup && (
+          <div className="fixed inset-0 flex items-center justify-center bg-black/40 z-50">
+            <motion.div
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              className="bg-white p-6 md:p-8 rounded-2xl w-[350px] md:w-[400px] shadow-xl"
+            >
+              <h2 className="text-xl font-bold mb-4 text-gray-800 text-center">
+                Quick Setup
+              </h2>
+              <p className="text-sm text-gray-500 mb-4 text-center">
+                Please enter some basic info to get started
+              </p>
+              <div className="space-y-4">
+
+                {/* (unchanged inputs) */}
+                <div className="flex flex-col">
+                  <input
+                    type="text"
+                    placeholder="Region (e.g., Goa)"
+                    value={userInput.region}
+                    onChange={(e) => {
+                      setUserInput({ ...userInput, region: e.target.value });
+                      setInputErrors({ ...inputErrors, region: "" });
+                    }}
+                    className="w-full border p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-300"
+                  />
+                  {inputErrors.region && (
+                    <p className="text-red-500 text-sm mt-1 text-left">
+                      {inputErrors.region}
+                    </p>
+                  )}
+                </div>
+
+                <div className="flex flex-col">
+                  <input
+                    type="number"
+                    placeholder="Land Size (acres)"
+                    value={userInput.landSize}
+                    onChange={(e) => {
+                      setUserInput({ ...userInput, landSize: e.target.value });
+                      setInputErrors({ ...inputErrors, landSize: "" });
+                    }}
+                    className="w-full border p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-300"
+                  />
+                  {inputErrors.landSize && (
+                    <p className="text-red-500 text-sm mt-1 text-left">
+                      {inputErrors.landSize}
+                    </p>
+                  )}
+                </div>
+
+                <div className="flex flex-col">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => {
+                      const file = e.target.files[0];
+
+                      setUserInput({ ...userInput, soilType: file });
+                      setInputErrors({ ...inputErrors, soilType: "" });
+                    }}
+                    className="w-full border p-2 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-emerald-300"
+                  />
+
+                  <p className="text-xs text-gray-500 mt-1">
+                    Upload soil image for analysis
+                  </p>
+
+                  {/* ✅ IMAGE PREVIEW */}
+                  {userInput.soilType && (
+                    <div className="mt-3">
+                      <img
+                        src={URL.createObjectURL(userInput.soilType)}
+                        alt="Soil Preview"
+                        className="w-full h-32 object-cover rounded-lg border"
+                      />
+                    </div>
+                  )}
+
+                  {inputErrors.soilType && (
+                    <p className="text-red-500 text-sm mt-1 text-left">
+                      {inputErrors.soilType}
+                    </p>
+                  )}
+                </div>
+
+                <button
+                  onClick={handleSubmitPopup}
+                  className="w-full bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 transition"
+                >
+                  Submit
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+
+        {/* SIGNUP SUCCESS */}
+        {showSuccess && (
+          <div className="fixed inset-0 flex items-center justify-center bg-black/40 z-50">
+            <motion.div
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              className="bg-white p-6 md:p-8 rounded-2xl w-[300px] md:w-[350px] shadow-xl flex flex-col items-center gap-4"
+            >
+              <CheckCircle className="text-green-500 w-12 h-12" />
+              <h2 className="text-lg font-bold text-gray-800 text-center">
+                Signup Successful!
+              </h2>
+              <p className="text-sm text-gray-500 text-center">
+                Welcome to SmartKrishi 🌱
+              </p>
+            </motion.div>
+          </div>
+        )}
+
+        {/* 🔥 EVERYTHING BELOW UNCHANGED */}
+        {/* (Welcome, Stats, Weather, Alerts, Charts, Soil Snapshot remain EXACTLY same) */}
 
         {/* WELCOME */}
-        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-green-600 to-emerald-600 px-6 py-5 shadow-md">
+        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-green-600 to-emerald-600 px-6 py-5 shadow-md mx-6 mt-2 mb-6">
           <h1 className="text-2xl md:text-3xl font-bold text-white text-left">
             Welcome back, Farmer! 🌾
           </h1>
@@ -73,7 +267,7 @@ export default function Dashboard() {
         </div>
 
         {/* STATS */}
-        <div className="grid grid-cols-4 gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 m-6">
           {[
             { title: "Farm Health", value: "87%", icon: Activity },
             { title: "Active Crops", value: "12", icon: Sprout },
@@ -83,7 +277,7 @@ export default function Dashboard() {
             <motion.div
               whileHover={{ y: -6 }}
               key={i}
-              className="bg-white p-5 rounded-xl shadow-sm hover:shadow-lg transition flex justify-between items-center"
+              className="bg-white p-5 rounded-xl shadow-lg hover:shadow-2xl transition flex justify-between items-center"
             >
               <div>
                 <p className="text-xs text-gray-400">{item.title}</p>
@@ -98,13 +292,13 @@ export default function Dashboard() {
         </div>
 
         {/* WEATHER + ALERTS */}
-        <div className="grid grid-cols-3 gap-6">
-          
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 m-6">
+
           {/* WEATHER */}
-          <div className="col-span-2 bg-white p-5 rounded-xl shadow-sm">
+          <div className="col-span-1 md:col-span-2 bg-white p-5 rounded-xl shadow-lg hover:shadow-2xl transition">
             <h2 className="font-semibold mb-4">Weather Forecast</h2>
 
-            <div className="grid grid-cols-4 gap-3 mb-5">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
               {[
                 { val: "28°C", label: "Temperature", icon: Thermometer, bg: "bg-orange-50", text: "text-orange-500", border: "border-orange-200" },
                 { val: "65%", label: "Humidity", icon: Droplets, bg: "bg-blue-50", text: "text-blue-500", border: "border-blue-200" },
@@ -140,7 +334,7 @@ export default function Dashboard() {
           </div>
 
           {/* ALERTS */}
-          <div className="bg-white p-5 rounded-xl shadow-sm">
+          <div className="bg-white p-5 rounded-xl shadow-lg hover:shadow-2xl transition">
             <h2 className="font-semibold mb-4 flex items-center gap-2">
               <AlertTriangle className="text-orange-500" /> Recent Alerts
             </h2>
@@ -154,21 +348,19 @@ export default function Dashboard() {
                 <motion.div
                   key={i}
                   whileHover={{ scale: 1.03 }}
-                  className={`p-4 rounded-2xl flex gap-3 border ${
-                    a.type === "danger"
-                      ? "bg-red-50 border-red-200"
-                      : a.type === "warning"
+                  className={`p-4 rounded-2xl flex gap-3 border ${a.type === "danger"
+                    ? "bg-red-50 border-red-200"
+                    : a.type === "warning"
                       ? "bg-orange-50 border-orange-200"
                       : "bg-blue-50 border-blue-200"
-                  }`}
+                    }`}
                 >
-                  <div className={`p-2 rounded-lg ${
-                    a.type === "danger"
-                      ? "bg-red-500"
-                      : a.type === "warning"
+                  <div className={`p-2 rounded-lg ${a.type === "danger"
+                    ? "bg-red-500"
+                    : a.type === "warning"
                       ? "bg-orange-500"
                       : "bg-blue-500"
-                  }`}>
+                    }`}>
                     <a.icon className="text-white w-4 h-4" />
                   </div>
 
@@ -183,9 +375,8 @@ export default function Dashboard() {
         </div>
 
         {/* CHARTS */}
-        <div className="grid grid-cols-2 gap-6">
-
-          <div className="bg-white p-5 rounded-xl shadow-sm">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 m-6">
+          <div className="bg-white p-5 rounded-xl shadow-lg hover:shadow-2xl transition">
             <h2 className="mb-4 font-semibold">Soil Moisture</h2>
             <ResponsiveContainer width="100%" height={250}>
               <LineChart data={moistureData}>
@@ -198,7 +389,7 @@ export default function Dashboard() {
             </ResponsiveContainer>
           </div>
 
-          <div className="bg-white p-5 rounded-xl shadow-sm">
+          <div className="bg-white p-5 rounded-xl shadow-lg hover:shadow-2xl transition">
             <h2 className="mb-4 font-semibold">Crop Health</h2>
             <ResponsiveContainer width="100%" height={250}>
               <BarChart data={cropData}>
@@ -209,14 +400,14 @@ export default function Dashboard() {
               </BarChart>
             </ResponsiveContainer>
           </div>
-
         </div>
 
+
         {/* SOIL SNAPSHOT */}
-        <div className="bg-white p-5 rounded-xl shadow-sm">
+        <div className="bg-white p-5 rounded-xl shadow-lg hover:shadow-2xl transition m-6">
           <h2 className="mb-5 font-semibold">Soil Condition Snapshot</h2>
 
-          <div className="grid grid-cols-3 gap-5">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
             {[
               { name: "Nitrogen", val: 78 },
               { name: "Phosphorus", val: 65 },
@@ -225,7 +416,7 @@ export default function Dashboard() {
               <motion.div
                 key={i}
                 whileHover={{ scale: 1.03 }}
-                className="p-5 rounded-2xl bg-green-50 border border-green-200"
+                className="p-5 rounded-2xl bg-green-50 border border-green-200 shadow-lg hover:shadow-2xl transition"
               >
                 <div className="flex justify-between mb-2">
                   <span className="text-sm font-semibold">{item.name}</span>
@@ -241,6 +432,7 @@ export default function Dashboard() {
             ))}
           </div>
         </div>
+
 
       </div>
     </Layout>

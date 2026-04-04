@@ -11,6 +11,9 @@ export default function AiAssistant() {
   const [input, setInput] = useState("");
   const chatRef = useRef();
 
+  // ✅ Fix duplicate messages (Strict Mode)
+  const hasStarted = useRef(false);
+
   const time = () =>
     new Date().toLocaleTimeString([], {
       hour: "2-digit",
@@ -28,6 +31,9 @@ export default function AiAssistant() {
 
   // INIT
   useEffect(() => {
+    if (hasStarted.current) return;
+    hasStarted.current = true;
+
     startChat();
   }, []);
 
@@ -73,7 +79,6 @@ export default function AiAssistant() {
       "What is the rainfall (mm)? (e.g., 200)",
       "Which crop was grown last year? (e.g., Rice)",
     ],
-
     fertilizer: [
       "What is the soil type? (e.g., Loamy)",
       "What is the soil pH level? (e.g., 6.5)",
@@ -84,7 +89,6 @@ export default function AiAssistant() {
       "Which crop are you growing? (e.g., Wheat)",
       "What is the season? (e.g., Rabi)",
     ],
-
     yield: [
       "Which state? (e.g., Maharashtra)",
       "Which district? (e.g., Pune)",
@@ -96,8 +100,9 @@ export default function AiAssistant() {
 
   // OPTION CLICK
   const handleOptionClick = (opt) => {
-    if (step !== "operation") return; // ✅ prevent double click
+    if (step !== "operation") return;
 
+    setStep("locked"); // prevent double click
     addUser(opt.label);
 
     setOperation(opt.value);
@@ -107,10 +112,13 @@ export default function AiAssistant() {
     if (opt.value === "disease") {
       setStep("upload");
 
-      addBot({
-        text: "Upload a crop image for disease detection 📷",
-        upload: true,
-      });
+      setTimeout(() => {
+        addBot({
+          text: "Upload a crop image for disease detection 📷",
+          upload: true,
+        });
+      }, 400);
+
       return;
     }
 
@@ -127,10 +135,8 @@ export default function AiAssistant() {
 
     addUser(input);
 
-    setAnswers((prev) => {
-      const updated = { ...prev, [index]: input };
-      return updated;
-    });
+    const updated = { ...answers, [index]: input };
+    setAnswers(updated);
 
     const nextIndex = index + 1;
 
@@ -197,16 +203,18 @@ export default function AiAssistant() {
   const endFlow = () => {
     setStep("operation");
 
-    addBot({ text: "✅ Thank you! Want to try another?" });
-
     setTimeout(() => {
-      showOperations();
-    }, 1000);
+      addBot({ text: "✅ Want to try another?" });
+
+      setTimeout(() => {
+        showOperations();
+      }, 600);
+    }, 300);
   };
 
   return (
     <Layout>
-      <div className="space-y-6">
+      <div className="px-6 flex flex-col gap-6">
 
         {/* BANNER */}
         <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-green-600 to-emerald-600 px-6 py-5 shadow-md">
@@ -219,12 +227,12 @@ export default function AiAssistant() {
         </div>
 
         {/* CHAT */}
-        <div className="bg-white rounded-2xl border flex flex-col h-[70vh]">
+        <div className="bg-white rounded-2xl border shadow-sm flex flex-col h-[70vh] overflow-hidden">
 
           {/* MESSAGES */}
           <div
             ref={chatRef}
-            className="flex-1 overflow-y-auto p-6 space-y-4 bg-gray-50"
+            className="flex-1 overflow-y-auto p-5 space-y-4 bg-gradient-to-b from-gray-50 to-white"
           >
             {messages.map((m, i) => (
               <div
@@ -236,10 +244,10 @@ export default function AiAssistant() {
                 <motion.div
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className={`px-4 py-3 rounded-xl max-w-md text-sm ${
+                  className={`px-4 py-3 rounded-2xl max-w-md text-sm shadow-sm ${
                     m.type === "user"
-                      ? "bg-green-600 text-white"
-                      : "bg-white border"
+                      ? "bg-green-600 text-white rounded-br-md"
+                      : "bg-white border rounded-bl-md"
                   }`}
                 >
                   <p>{m.text}</p>
@@ -251,14 +259,13 @@ export default function AiAssistant() {
                     />
                   )}
 
-                  {/* OPTIONS */}
                   {m.options && (
                     <div className="mt-3 flex flex-col gap-2">
                       {m.options.map((opt, idx) => (
                         <button
                           key={idx}
                           onClick={() => handleOptionClick(opt)}
-                          className="w-full text-left px-4 py-2 rounded-lg bg-green-50 hover:bg-green-100 border border-green-200"
+                          className="w-full text-left px-4 py-2 rounded-lg bg-green-50 hover:bg-green-100 border border-green-200 transition"
                         >
                           {opt.label}
                         </button>
@@ -266,7 +273,6 @@ export default function AiAssistant() {
                     </div>
                   )}
 
-                  {/* UPLOAD */}
                   {m.upload && (
                     <label className="mt-3 block border-2 border-dashed border-green-300 p-4 rounded-lg text-center cursor-pointer hover:bg-green-50">
                       Upload Image 📷
@@ -289,7 +295,7 @@ export default function AiAssistant() {
           </div>
 
           {/* INPUT */}
-          <div className="border-t p-3 flex gap-2">
+          <div className="border-t p-3 flex gap-2 bg-white">
             <input
               value={input}
               onChange={(e) => setInput(e.target.value)}
@@ -299,7 +305,7 @@ export default function AiAssistant() {
             />
             <button
               onClick={handleSend}
-              className="bg-green-600 text-white px-4 rounded-lg"
+              className="bg-green-600 hover:bg-green-700 transition text-white px-4 rounded-lg"
             >
               Send
             </button>
