@@ -257,7 +257,8 @@ export default function Dashboard() {
         {/* (Welcome, Stats, Weather, Alerts, Charts, Soil Snapshot remain EXACTLY same) */}
 
         {/* WELCOME */}
-        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-green-600 to-emerald-600 px-6 py-5 shadow-md mx-6 mt-2 mb-6">
+        {/* <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-green-600 to-emerald-600 px-6 py-5 shadow-md mx-6 mt-2 mb-6"> */}
+        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-teal-600 to-teal-400 px-6 py-5 shadow-md mx-6 mt-2 mb-6">
           <h1 className="text-2xl md:text-3xl font-bold text-white text-left">
             Welcome back, Farmer! 🌾
           </h1>

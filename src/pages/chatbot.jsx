@@ -217,7 +217,7 @@ export default function AiAssistant() {
       <div className="px-6 flex flex-col gap-6">
 
         {/* BANNER */}
-        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-green-600 to-emerald-600 px-6 py-5 shadow-md">
+        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-teal-600 to-teal-400 px-6 py-5 shadow-md">
           <h1 className="text-2xl md:text-3xl font-bold text-white text-left">
             SmartKrishi AI Assistant 🌱
           </h1>

@@ -8,24 +8,40 @@ import {
   Star,
   Shield,
   ChevronRight,
+  Camera,
 } from "lucide-react";
 import Layout from "../components/layout";
 
 /* ---------------- MODAL ---------------- */
-const Modal = ({ open, title, children, onClose }) => {
+const Modal = ({ open, title, children, onClose, onSave, danger }) => {
   if (!open) return null;
 
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
       <div className="bg-white w-[90%] max-w-md rounded-2xl p-5 shadow-lg">
         <h2 className="text-lg font-semibold mb-4">{title}</h2>
+
         {children}
-        <button
-          onClick={onClose}
-          className="mt-4 w-full bg-gray-200 hover:bg-gray-200 py-2 rounded-lg"
-        >
-          Close
-        </button>
+
+        <div className="flex gap-3 mt-5">
+          <button
+            onClick={onClose}
+            className="w-full bg-black text-white py-2 rounded-lg hover:bg-gray-900 transition"
+          >
+            Cancel
+          </button>
+
+          {onSave && (
+            <button
+              onClick={onSave}
+              className={`w-full text-white py-2 rounded-lg ${
+                danger ? "bg-red-500 hover:bg-red-600" : "bg-blue-500"
+              }`}
+            >
+              {danger ? "Delete" : "Save"}
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -35,6 +51,9 @@ export default function SettingsPage() {
   const [modal, setModal] = useState(null);
   const [notifications, setNotifications] = useState(true);
   const [rating, setRating] = useState(0);
+  const [profilePic, setProfilePic] = useState(
+    "https://i.pravatar.cc/100"
+  );
 
   const [form, setForm] = useState({
     name: "Farmer Name",
@@ -42,12 +61,61 @@ export default function SettingsPage() {
     phone: "9876543210",
   });
 
+  const [tempValue, setTempValue] = useState("");
+
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setProfilePic(URL.createObjectURL(file));
+    }
+  };
+
+  const handleSave = () => {
+    if (["name", "email", "phone"].includes(modal)) {
+      if (tempValue.trim() !== "") {
+        setForm({ ...form, [modal]: tempValue });
+      }
+    }
+    setTempValue("");
+    setModal(null);
+  };
+
   return (
     <Layout>
-      <div className="px-6 py-4 bg-gray-50 min-h-screen flex flex-col gap-5">
+      <div className="px-6 pt-2 pb-4 bg-gray-50 min-h-screen flex flex-col gap-5">
+
+        {/* ✅ BANNER */}
+        <div className="rounded-2xl bg-gradient-to-r from-teal-600 to-teal-400 px-6 py-5 shadow-md flex items-center gap-5">
+
+          {/* AVATAR */}
+          <label className="relative cursor-pointer flex-shrink-0">
+            <input type="file" className="hidden" onChange={handleImageChange} />
+
+            <img
+              src={profilePic}
+              className="w-20 h-20 md:w-24 md:h-24 rounded-full border-4 border-white shadow-lg object-cover"
+            />
+
+            <div className="absolute bottom-1 right-1 bg-black/80 p-1.5 rounded-full">
+              <Camera size={14} className="text-white" />
+            </div>
+          </label>
+
+          {/* ✅ NAME + EMAIL (FIXED SPACING) */}
+          <div className="text-white flex flex-col justify-center">
+            <h1 className="text-xl md:text-2xl text-white font-bold leading-tight">
+              {form.name}
+            </h1>
+
+            <span className="text-m md:text-base text-white/80 ">
+              {form.email}
+            </span>
+          </div>
+
+        </div>
 
         {/* PERSONAL DETAILS */}
-        <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+        <div className="bg-white rounded-2xl text-left border border-gray-200 overflow-hidden">
           {[
             { label: "Full Name", key: "name" },
             { label: "Email", key: "email" },
@@ -58,7 +126,7 @@ export default function SettingsPage() {
               className="flex justify-between items-center px-5 py-4 border-b last:border-none"
             >
               <div className="flex flex-col">
-                <span className="text-sm text-gray-400 text-left">
+                <span className="text-sm text-gray-400">
                   {item.label}
                 </span>
                 <span className="text-gray-700 font-medium">
@@ -67,7 +135,10 @@ export default function SettingsPage() {
               </div>
 
               <button
-                onClick={() => setModal(item.key)}
+                onClick={() => {
+                  setModal(item.key);
+                  setTempValue(""); // empty input
+                }}
                 className="text-blue-600 text-sm flex items-center gap-1"
               >
                 Edit <ChevronRight size={14} />
@@ -201,53 +272,63 @@ export default function SettingsPage() {
         </div>
       </div>
 
-      {/* -------- MODALS -------- */}
+      {/* MODALS */}
 
-      {/* EDIT */}
+      {/* EDIT DETAILS */}
       <Modal
-        open={["name", "email", "phone"].includes(modal)}
+        open={["name","email","phone"].includes(modal)}
         title="Edit Details"
-        onClose={() => setModal(null)}
+        onClose={()=>setModal(null)}
+        onSave={handleSave}
       >
         <input
-          placeholder="Edit here..."
-          onChange={(e) =>
-            setForm({ ...form, [modal]: e.target.value })
-          }
           className="w-full border p-2 rounded-lg"
+          placeholder={
+            modal === "name"
+              ? "Enter name"
+              : modal === "email"
+              ? "Enter email"
+              : "Enter phone number"
+          }
+          value={tempValue}
+          onChange={(e)=>setTempValue(e.target.value)}
         />
       </Modal>
 
       {/* PASSWORD */}
       <Modal
-        open={modal === "password"}
+        open={modal==="password"}
         title="Change Password"
-        onClose={() => setModal(null)}
+        onClose={()=>setModal(null)}
+        onSave={()=>setModal(null)}
       >
-        <input
-          type="password"
-          placeholder="New Password"
-          className="w-full border p-2 rounded-lg mb-2"
-        />
-        <button className="w-full bg-blue-400 text-white py-2 rounded-lg">
-          Update Password
-        </button>
+        <div className="flex flex-col gap-3">
+          <input
+            type="password"
+            placeholder="Current password"
+            className="w-full border p-2 rounded-lg"
+          />
+          <input
+            type="password"
+            placeholder="New password"
+            className="w-full border p-2 rounded-lg"
+          />
+        </div>
       </Modal>
 
       {/* RATE */}
       <Modal
-        open={modal === "rate"}
+        open={modal==="rate"}
         title="Rate Us"
-        onClose={() => setModal(null)}
+        onClose={()=>setModal(null)}
+        onSave={()=>setModal(null)}
       >
         <div className="flex justify-center gap-2 text-2xl">
-          {[1, 2, 3, 4, 5].map((i) => (
+          {[1,2,3,4,5].map(i=>(
             <span
               key={i}
-              onClick={() => setRating(i)}
-              className={`cursor-pointer ${
-                i <= rating ? "text-orange-500" : "text-gray-300"
-              }`}
+              onClick={()=>setRating(i)}
+              className={i<=rating?"text-orange-500":"text-gray-300"}
             >
               ★
             </span>
@@ -257,16 +338,13 @@ export default function SettingsPage() {
 
       {/* DELETE */}
       <Modal
-        open={modal === "delete"}
+        open={modal==="delete"}
         title="Confirm Delete"
-        onClose={() => setModal(null)}
+        onClose={()=>setModal(null)}
+        onSave={()=>setModal(null)}
+        danger
       >
-        <p className="text-gray-600 mb-3">
-          Are you sure you want to delete your account?
-        </p>
-        <button className="w-full bg-red-500 text-white py-2 rounded-lg">
-          Yes, Delete
-        </button>
+        <p>Are you sure?</p>
       </Modal>
 
     </Layout>
